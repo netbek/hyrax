@@ -16,3 +16,8 @@ echo "Virtual environment updated"
 echo "Updating Node dependencies ..."
 npm i
 echo "Node dependencies updated"
+
+echo "Updating R dependencies ..."
+# sudo su - -c "R -e \"install.packages('ggplot2')\""
+R -e "install.packages('ggplot2')"
+echo "R dependencies updated"

@@ -7,7 +7,7 @@ An example of using Altair and ggplot2 in Pyramid.
 1. Install system dependencies:
 
     ```
-    sudo apt-get install build-essential curl g++ gcc python-dev
+    sudo apt-get install build-essential curl g++ gcc python-dev r-base
     ```
 
 2. Install NVM and Node 8.x:
@@ -19,7 +19,7 @@ An example of using Altair and ggplot2 in Pyramid.
     nvm alias default v8.9.4
     ```
 
-3. Install Node and Python dependencies:
+3. Install Node, Python and R dependencies:
 
     ```
     cd /path/to/hyrax
