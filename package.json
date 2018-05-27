@@ -1,0 +1,66 @@
+{
+  "name": "hyrax",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/netbek/hyrax"
+  },
+  "author": {
+    "name": "Hein Bekker",
+    "email": "hein@netbek.co.za",
+    "url": "http://netbek.co.za"
+  },
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/netbek/hyrax/issues"
+  },
+  "browserslist": [
+    "last 5 years",
+    "android >= 2",
+    "bb >= 6",
+    "chrome >= 21",
+    "edge >= 12",
+    "firefox >= 28",
+    "ie >= 8",
+    "ios >= 6",
+    "op_mini all",
+    "op_mob >= 12",
+    "opera >= 12",
+    "safari >= 6",
+    "samsung >= 5"
+  ],
+  "dependencies": {
+    "@netbek/finch": "0.0.8",
+    "vega-embed": "^3.8.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^8.2.3",
+    "babel-loader": "^7.1.4",
+    "babel-plugin-transform-object-assign": "^6.22.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-remove-strict-mode": "0.0.2",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-stage-2": "^6.24.1",
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-babel": "^5.1.0",
+    "eslint-plugin-dollar-sign": "^1.0.1",
+    "eslint-plugin-html": "^4.0.3",
+    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-jsdoc": "^3.7.1",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-markdown": "^1.0.0-beta.6",
+    "eslint-plugin-prettier": "^2.6.0",
+    "eslint-plugin-react": "^7.8.2",
+    "gulp": "^3.9.1",
+    "livereload": "^0.7.0",
+    "lodash": "^4.17.10",
+    "open": "0.0.5",
+    "prettier": "^1.12.1",
+    "run-sequence": "^2.2.1"
+  }
+}

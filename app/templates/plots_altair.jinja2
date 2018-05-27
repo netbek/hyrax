@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Altair</title>
+  </head>
+  <body>
+    <article>
+      {% for item in plots %}
+        <h2>{{ item.title }}</h2>
+        <figure class="figure">
+          <div id="item-{{ loop.index }}"></div>
+        </figure>
+      {% endfor %}
+    </article>
+
+    <script src="/node_modules/vega/build/vega.min.js"></script>
+    <script src="/node_modules/vega-lite/build/vega-lite.min.js"></script>
+    <script src="/node_modules/vega-embed/build/vega-embed.min.js"></script>
+
+    {% for item in plots %}
+      <script>
+        (function() {
+          var spec = {{ item.spec|safe }};
+          vegaEmbed(
+            '#item-{{ loop.index }}',
+            spec,
+            {
+              actions: {
+                export: false,
+                source: true,
+                compiled: false,
+                editor: false
+              }
+            }
+          );
+        })();
+      </script>
+    {% endfor %}
+  </body>
+</html>
