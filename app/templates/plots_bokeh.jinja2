@@ -4,15 +4,16 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <title>Home</title>
+    <title>bokeh</title>
   </head>
   <body>
     <article>
-      <ul>
-        <li><a href="/altair">Altair</a></li>
-        <li><a href="/bokeh">Bokeh</a></li>
-        <li><a href="/ggplot2">ggplot2</a></li>
-      </ul>
+      {% for item in plots %}
+        <h2>{{ item.title }}</h2>
+        <figure class="figure">
+          <img src="{{ item.url }}" alt="{{ item.title }}" />
+        </figure>
+      {% endfor %}
     </article>
   </body>
 </html>
