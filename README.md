@@ -37,6 +37,13 @@ An example of using Altair and ggplot2 in Pyramid.
 
 2. Open http://localhost:8080
 
+## Resources
+
+* [Altair](https://altair-viz.github.io) - Vega-Lite specification generator for Python
+* [ggplot2](http://ggplot2.tidyverse.org)
+* [pygg](https://github.com/sirrice/pygg) - ggplot2 wrapper for Python
+* [Vega-Lite](https://vega.github.io)
+
 ## License
 
 Copyright (c) 2018 Hein Bekker. Licensed under the GNU Affero General Public License, version 3.
