@@ -21,3 +21,5 @@ echo "Updating R dependencies ..."
 # sudo su - -c "R -e \"install.packages('ggplot2')\""
 R -e "install.packages('ggplot2')"
 echo "R dependencies updated"
+
+mkdir -p app/cache/plots
