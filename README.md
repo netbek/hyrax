@@ -35,6 +35,8 @@ An example of using Altair and ggplot2 in Pyramid.
     ./start.sh
     ```
 
+2. Open http://localhost:8080
+
 ## License
 
 Copyright (c) 2018 Hein Bekker. Licensed under the GNU Affero General Public License, version 3.
