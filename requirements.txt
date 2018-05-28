@@ -1,6 +1,7 @@
 altair==2.0.1
 bokeh==0.12.16
 Jinja2==2.7.3
+pygg==0.1.8
 pyramid==1.5.2
 pyramid-jinja2==2.3.3
 vega-datasets==0.5.0
