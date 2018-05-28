@@ -5,14 +5,15 @@
     <meta name="viewport" content="width=device-width"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <title>bokeh</title>
+    <link rel="stylesheet" href="/node_modules/bokehjs/build/css/bokeh.min.css" />
+    <script src="/node_modules/bokehjs/build/js/bokeh.min.js"></script>
   </head>
   <body>
     <article>
       {% for item in plots %}
         <h2>{{ item.title }}</h2>
-        <figure class="figure">
-          <img src="{{ item.url }}" alt="{{ item.title }}" />
-        </figure>
+        {{ item.div|safe }}
+        <script src="{{ item.script_url }}"></script>
       {% endfor %}
     </article>
   </body>

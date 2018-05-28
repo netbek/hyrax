@@ -33,6 +33,7 @@
   ],
   "dependencies": {
     "@netbek/finch": "0.0.8",
+    "bokehjs": "^0.12.16",
     "vega-embed": "^3.8.0"
   },
   "devDependencies": {
