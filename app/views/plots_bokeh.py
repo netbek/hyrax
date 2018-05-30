@@ -1,8 +1,7 @@
 from bokeh.embed import components
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import AjaxDataSource, ColumnDataSource, HoverTool
 from bokeh.palettes import Category10
 from bokeh.plotting import figure
-from bokeh.models.sources import AjaxDataSource
 from bokeh.transform import factor_cmap
 from lxml import etree
 from vega_datasets import data
