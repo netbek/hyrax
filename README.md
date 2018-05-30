@@ -1,6 +1,6 @@
 # Hyrax
 
-An example of using Altair and ggplot2 in Pyramid.
+An example of using Altair, Bokeh and ggplot2 in Pyramid.
 
 ## Installation
 
@@ -28,14 +28,14 @@ An example of using Altair and ggplot2 in Pyramid.
 
 ## Usage
 
-1. Start the app:
+1. Start the app and open in a browser window:
 
     ```
     cd /path/to/hyrax
     ./start.sh
     ```
 
-2. Open http://localhost:8080
+2. Reload http://localhost:8080 if the browser cannot connect to the app.
 
 ## Resources
 
