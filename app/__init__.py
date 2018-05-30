@@ -21,6 +21,7 @@ def main(global_config, **settings):
     config.add_route('api.altair', '/api/altair')
 
     config.add_route('plots_bokeh', '/bokeh')
+    config.add_route('api.bokeh', '/api/bokeh')
 
     config.add_route('plots_ggplot2', '/ggplot2')
 

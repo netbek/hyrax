@@ -2,6 +2,7 @@ from bokeh.embed import components
 from bokeh.models import ColumnDataSource, HoverTool
 from bokeh.palettes import Category10
 from bokeh.plotting import figure
+from bokeh.models.sources import AjaxDataSource
 from bokeh.transform import factor_cmap
 from lxml import etree
 from vega_datasets import data
@@ -24,6 +25,22 @@ class BokehViews:
         self.request = request
 
 
+    @view_config(route_name='api.bokeh', renderer='json')
+    def api(self):
+        """Data for the plots"""
+        dataset = self.request.params.get('dataset')
+
+        if not dataset:
+            raise ValueError('"dataset" value must be given')
+
+        if not dataset in data.list_datasets():
+            raise ValueError('Dataset "{}" not found'.format(dataset))
+
+        df = data(dataset)
+
+        return df.to_dict(orient='list')
+
+
     @view_config(route_name='plots_bokeh', renderer='plots_bokeh.jinja2')
     def index(self):
         """Render the plots"""
@@ -31,7 +48,8 @@ class BokehViews:
 
         # Build plot
         df = data('iris')
-        source = ColumnDataSource(df)
+        # source = ColumnDataSource(df)
+        source = AjaxDataSource(data_url='/api/bokeh?dataset=iris')
 
         species = df['species'].unique()
         fill_color = factor_cmap('species', palette=Category10[len(species)], factors=species)
