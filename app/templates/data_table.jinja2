@@ -88,21 +88,23 @@
             // Start file download
             saveAs(blob, filename);
           });
-
-          // NOTES
-          //
-          // 1. Other approaches to loading data include:
-          //
-          //    * Embed JSON string in HTML, get text, and parse into object, e.g.
-          //
-          //      ```
-          //      <script type="application/json" id="data">{{ data|safe }}</script>
-          //      <script>var data = JSON.parse(jQuery('#data').text());</script>
-          //      ```
-          //
-          //    * Ajax
         })();
       </script>
     </article>
   </body>
 </html>
+
+{#
+NOTES
+
+1. Other approaches to loading data include:
+
+   * Embed JSON string in HTML, get text, and parse into object, e.g.
+
+     ```
+     <script type="application/json" id="data">{{ data|safe }}</script>
+     <script>var data = JSON.parse(jQuery('#data').text());</script>
+     ```
+
+   * Ajax
+#}
