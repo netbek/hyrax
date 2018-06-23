@@ -34,6 +34,11 @@
   "dependencies": {
     "@netbek/finch": "0.0.8",
     "bokehjs": "0.12.16",
+    "datatables.net": "^1.10.19",
+    "datatables.net-dt": "^1.10.19",
+    "file-saver": "^1.3.8",
+    "lodash": "^4.17.10",
+    "papaparse": "^4.5.0",
     "vega-embed": "^3.8.0"
   },
   "devDependencies": {
@@ -59,7 +64,6 @@
     "eslint-plugin-react": "^7.8.2",
     "gulp": "^3.9.1",
     "livereload": "^0.7.0",
-    "lodash": "^4.17.10",
     "open": "0.0.5",
     "prettier": "^1.12.1",
     "run-sequence": "^2.2.1"

@@ -25,6 +25,8 @@ def main(global_config, **settings):
 
     config.add_route('plots_ggplot2', '/ggplot2')
 
+    config.add_route('data_table', '/data-table')
+
     # Views
     config.scan()
 

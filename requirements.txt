@@ -1,5 +1,7 @@
 altair==2.0.1
 bokeh==0.12.16
+flake8==3.5.0
+flake8-docstrings==1.3.0
 Jinja2==2.7.3
 lxml==3.4.1
 pygg==0.1.8

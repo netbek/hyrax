@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Data table</title>
+    <link rel="stylesheet" href="/node_modules/datatables.net-dt/css/jquery.dataTables.min.css"/>
+  </head>
+  <body>
+    <article>
+      <nav>
+        <button id="download-csv" type="button">Download CSV</button>
+      </nav>
+
+      <table id="table"></table>
+
+      <script type="application/json" id="data">{{ data|safe }}</script>
+
+      <script src="/node_modules/jquery/dist/jquery.min.js"></script>
+      <script src="/node_modules/lodash/lodash.min.js"></script>
+      <script src="/node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
+      <script src="/node_modules/papaparse/papaparse.min.js"></script>
+      <script src="/node_modules/file-saver/FileSaver.min.js"></script>
+
+      <script>
+        (function() {
+          var $data = jQuery('#data');
+          var $table = jQuery('#table');
+          var $downloadCsv = jQuery('#download-csv');
+
+          // Parse data string into array
+          var data = JSON.parse($data.text());
+
+          // Define columns for table and CSV
+          var columns = [
+            {
+              data: 'name',
+              title: 'Name'
+            },
+            {
+              data: 'count',
+              title: 'Count'
+            }
+          ];
+
+          // Init data table
+          $table.DataTable({
+            data: data.map(function(datum) {
+              // Convert &, <, > to HTML entities
+              return _.mapValues(datum, function(value) {
+                return _.escape(value);
+              });
+            }),
+            columns: columns,
+            dom: 't',
+            pageLength: -1,
+            order: [[1, 'desc']]
+          });
+
+          $downloadCsv.on('click', function() {
+            // Build array of column names for header row
+            var csvFields = columns.map(function(column) {
+              return column.title;
+            });
+
+            // Build array of rows. Each row is an array of column values.
+            var csvData = data.reduce(function(result, datum) {
+              result.push(
+                columns.map(function(column) {
+                  return datum[column.data];
+                })
+              );
+              return result;
+            }, []);
+
+            // Build CSV data string
+            var csv = Papa.unparse(
+              {
+                fields: csvFields,
+                data: csvData
+              },
+              {newline: '\n'}
+            );
+
+            // Convert string to blob for file download
+            var blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+
+            var filename = 'data.csv';
+
+            // Start the file download
+            saveAs(blob, filename);
+          });
+        })();
+      </script>
+    </article>
+  </body>
+</html>
