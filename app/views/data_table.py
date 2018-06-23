@@ -1,10 +1,9 @@
 """Data table view."""
-from pyramid.response import Response
-from pyramid.view import view_config
 import cStringIO
 import csv
 import json
-
+from pyramid.response import Response
+from pyramid.view import view_config
 
 def to_csv(data, fieldnames):
     output = cStringIO.StringIO()
