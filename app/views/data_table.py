@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Data table view."""
 import cStringIO
 import csv
@@ -24,11 +25,11 @@ class DataTableViews:
     def index(self):
         data = (
             {
-                'name': 'Elene Sommerfield',
+                'name': 'Elené Sommerfield',
                 'count': 4.6
             },
             {
-                'name': 'Leah <Pagani>',
+                'name': 'Leah <Pagani> 🍍',
                 'count': None
             },
             {
