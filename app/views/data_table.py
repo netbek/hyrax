@@ -1,20 +1,9 @@
 # -*- coding: utf-8 -*-
 """Data table view."""
-import cStringIO
-import csv
 import json
 from pyramid.response import Response
 from pyramid.view import view_config
-
-def to_csv(data, fieldnames):
-    output = cStringIO.StringIO()
-    writer = csv.DictWriter(output, fieldnames=fieldnames)
-    writer.writeheader()
-    writer.writerows(data)
-    contents = output.getvalue()
-    output.close()
-
-    return contents
+from .helpers.utils import to_csv
 
 
 class DataTableViews:
