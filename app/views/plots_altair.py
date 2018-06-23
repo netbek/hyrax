@@ -21,7 +21,7 @@ class AltairViews:
         if not dataset:
             raise ValueError('"dataset" value must be given')
 
-        if not dataset in data.list_datasets():
+        if dataset not in data.list_datasets():
             raise ValueError('Dataset "{}" not found'.format(dataset))
 
         df = data(dataset)
