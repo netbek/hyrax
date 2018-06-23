@@ -4,16 +4,17 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <title>Data table</title>
+    <title>Data table (jQuery)</title>
     <link rel="stylesheet" href="/node_modules/datatables.net-dt/css/jquery.dataTables.min.css"/>
   </head>
   <body>
     <article>
-      <nav>
-        <button id="download-csv" type="button">Download CSV</button>
-      </nav>
-
-      <table id="table"></table>
+      <div>
+        <nav>
+          <button id="download-csv">Download CSV</button>
+        </nav>
+        <table id="table"></table>
+      </div>
 
       <script src="/node_modules/jquery/dist/jquery.min.js"></script>
       <script src="/node_modules/lodash/lodash.min.js"></script>
@@ -37,15 +38,16 @@
             },
             {
               data: 'count',
-              title: 'Count'
+              title: 'Count',
+              className: 'dt-body-right'
             }
           ];
 
           // Init data table
           $table.DataTable({
             data: data.map(function(datum) {
-              // Convert &, <, > to HTML entities
               return _.mapValues(datum, function(value) {
+                // Convert &, <, > to HTML entities
                 return _.escape(value);
               });
             }),
@@ -55,13 +57,14 @@
             order: [[1, 'desc']]
           });
 
+          // Add download event handler
           $downloadCsv.on('click', function() {
-            // Build array of column names for header row
+            // Build list of column names for header row
             var csvFields = columns.map(function(column) {
               return column.title;
             });
 
-            // Build array of rows. Each row is an array of column values.
+            // Build list of rows. Each row is a list of column values.
             var csvData = data.reduce(function(result, datum) {
               result.push(
                 columns.map(function(column) {

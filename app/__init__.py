@@ -25,7 +25,9 @@ def main(global_config, **settings):
 
     config.add_route('plots_ggplot2', '/ggplot2')
 
-    config.add_route('data_table', '/data-table')
+    config.add_route('data_table_jquery', '/data-table-jquery')
+    config.add_route('data_table_jquery_component', '/data-table-jquery-component')
+    config.add_route('data_table_react_component', '/data-table-react-component')
 
     # Views
     config.scan()

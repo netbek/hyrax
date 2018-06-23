@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Data table (jQuery component)</title>
+    <link rel="stylesheet" href="/node_modules/datatables.net-dt/css/jquery.dataTables.min.css"/>
+  </head>
+  <body>
+    <article>
+      <div id="container"></div>
+
+      <script src="/node_modules/jquery/dist/jquery.min.js"></script>
+      <script src="/node_modules/lodash/lodash.min.js"></script>
+      <script src="/node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
+      <script src="/node_modules/papaparse/papaparse.min.js"></script>
+      <script src="/node_modules/file-saver/FileSaver.min.js"></script>
+
+      {# Component that could be used on other pages #}
+      <script>
+        function CustomTable(props) {
+          var {
+            container,
+            data,
+            columns,
+            tableOptions,
+            csvOptions = {newline: '\n'}
+          } = props;
+
+          // Declare unique ID for this instance of component, because multiple
+          // instances could exist on same page and ID has to be unique for each
+          var elmId = _.uniqueId('custom-table-');
+
+          // Build elements
+          var $elm = jQuery(`
+            <div>
+              <nav>
+                <button id="${elmId}-download-csv">Download CSV</button>
+              </nav>
+              <table id="${elmId}-table"></table>
+            </div>
+          `);
+          var $downloadCsv = jQuery(`#${elmId}-download-csv`, $elm);
+          var $table = jQuery(`#${elmId}-table`, $elm);
+
+          // Add component to page
+          jQuery(container).html($elm);
+
+          // Init data table
+          $table.DataTable(
+            _.assign(
+              {
+                data: data.map(function(datum) {
+                  return _.mapValues(datum, function(value) {
+                    // Convert &, <, > to HTML entities
+                    return _.escape(value);
+                  });
+                }),
+                columns: columns
+              },
+              tableOptions
+            )
+          );
+
+          // Add download event handler
+          $downloadCsv.on('click', function() {
+            // Build list of column names for header row
+            var csvFields = columns.map(function(column) {
+              return column.title;
+            });
+
+            // Build list of rows. Each row is a list of column values.
+            var csvData = data.reduce(function(result, datum) {
+              result.push(
+                columns.map(function(column) {
+                  return datum[column.data];
+                })
+              );
+              return result;
+            }, []);
+
+            // Build CSV data string
+            var csv = Papa.unparse(
+              {
+                fields: csvFields,
+                data: csvData
+              },
+              csvOptions
+            );
+
+            // Convert string to blob for file download
+            var blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+
+            var filename = 'data.csv';
+
+            // Start file download
+            saveAs(blob, filename);
+          });
+        }
+      </script>
+
+      <script>
+        (function() {
+          var $container = jQuery('#container');
+
+          // Declare data
+          var data = {{ data|safe }};
+
+          // Declare columns for table and CSV
+          var columns = [
+            {
+              data: 'name',
+              title: 'Name'
+            },
+            {
+              data: 'count',
+              title: 'Count',
+              className: 'dt-body-right'
+            }
+          ];
+
+          // Declare table options
+          var tableOptions = {
+            dom: 't',
+            pageLength: -1,
+            order: [[1, 'desc']]
+          };
+
+          // Init component
+          new CustomTable({
+            container: $container,
+            data: data,
+            columns: columns,
+            tableOptions: tableOptions
+          });
+        })();
+      </script>
+    </article>
+  </body>
+</html>

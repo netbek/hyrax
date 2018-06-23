@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Data table (React component)</title>
+    <link rel="stylesheet" href="/node_modules/datatables.net-dt/css/jquery.dataTables.min.css"/>
+  </head>
+  <body>
+    <article>
+      <div id="container"></div>
+
+      <script src="/node_modules/jquery/dist/jquery.min.js"></script>
+      <script src="/node_modules/lodash/lodash.min.js"></script>
+      <script src="/node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
+      <script src="/node_modules/papaparse/papaparse.min.js"></script>
+      <script src="/node_modules/file-saver/FileSaver.min.js"></script>
+
+      <script src="/node_modules/react/dist/react-with-addons.min.js"></script>
+      <script src="/node_modules/react-dom/dist/react-dom.min.js"></script>
+      <script src="/node_modules/@babel/standalone/babel.min.js"></script>
+
+      {# Component that could be used on other pages #}
+      <script type="text/babel">
+        class CustomTable extends React.PureComponent {
+          constructor(props) {
+            super(props);
+
+            this.handleDownloadCsvClick = this.handleDownloadCsvClick.bind(this);
+          }
+
+          componentDidMount() {
+            var {data, columns, tableOptions} = this.props;
+            var {table} = this.refs;
+
+            // Init data table
+            jQuery(table).DataTable(
+              _.assign(
+                {
+                  data: data.map(function(datum) {
+                    return _.mapValues(datum, function(value) {
+                      // Convert &, <, > to HTML entities
+                      return _.escape(value);
+                    });
+                  }),
+                  columns: columns
+                },
+                tableOptions
+              )
+            );
+          }
+
+          handleDownloadCsvClick() {
+            var {data, columns, csvOptions = {newline: '\n'}} = this.props;
+
+            // Build list of column names for header row
+            var csvFields = columns.map(function(column) {
+              return column.title;
+            });
+
+            // Build list of rows. Each row is a list of column values.
+            var csvData = data.reduce(function(result, datum) {
+              result.push(
+                columns.map(function(column) {
+                  return datum[column.data];
+                })
+              );
+              return result;
+            }, []);
+
+            // Build CSV data string
+            var csv = Papa.unparse(
+              {
+                fields: csvFields,
+                data: csvData
+              },
+              csvOptions
+            );
+
+            // Convert string to blob for file download
+            var blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+
+            var filename = 'data.csv';
+
+            // Start file download
+            saveAs(blob, filename);
+          }
+
+          render() {
+            return (
+              <div>
+                <nav>
+                  <button onClick={this.handleDownloadCsvClick}>Download CSV</button>
+                </nav>
+                <table ref="table" />
+              </div>
+            );
+          }
+        }
+      </script>
+
+      {# Page-specific code #}
+      <script type="text/babel">
+        var $container = jQuery('#container');
+
+        // Declare data
+        var data = {{ data|safe }};
+
+        // Declare columns for table and CSV
+        var columns = [
+          {
+            data: 'name',
+            title: 'Name'
+          },
+          {
+            data: 'count',
+            title: 'Count',
+            className: 'dt-body-right'
+          }
+        ];
+
+        // Declare table options
+        var tableOptions = {
+          dom: 't',
+          pageLength: -1,
+          order: [[1, 'desc']]
+        };
+
+        // Add component to page
+        ReactDOM.render(
+          <CustomTable data={data} columns={columns} tableOptions={tableOptions} />,
+          $container.get(0)
+        );
+      </script>
+    </article>
+  </body>
+</html>
+
+{#
+NOTES
+
+1. Inline JS only for demonstration. In production, one would use a module
+   bundler such as Webpack, and transpile when building a bundle, not in-page
+   as done here.
+#}
