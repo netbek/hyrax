@@ -40,6 +40,7 @@ An example of using Altair, Bokeh and ggplot2 in Pyramid.
 ## Resources
 
 * [Altair](https://altair-viz.github.io) - Vega-Lite specification generator for Python
+* [DataTables](https://datatables.net/reference) - Interactive HTML tables
 * [ggplot2](http://ggplot2.tidyverse.org)
 * [pygg](https://github.com/sirrice/pygg) - ggplot2 wrapper for Python
 * [Vega-Lite](https://vega.github.io)
