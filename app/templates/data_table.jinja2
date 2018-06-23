@@ -15,8 +15,6 @@
 
       <table id="table"></table>
 
-      <script type="application/json" id="data">{{ data|safe }}</script>
-
       <script src="/node_modules/jquery/dist/jquery.min.js"></script>
       <script src="/node_modules/lodash/lodash.min.js"></script>
       <script src="/node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
@@ -25,14 +23,13 @@
 
       <script>
         (function() {
-          var $data = jQuery('#data');
           var $table = jQuery('#table');
           var $downloadCsv = jQuery('#download-csv');
 
-          // Parse data string into array
-          var data = JSON.parse($data.text());
+          // Declare data
+          var data = {{ data|safe }};
 
-          // Define columns for table and CSV
+          // Declare columns for table and CSV
           var columns = [
             {
               data: 'name',
@@ -91,6 +88,19 @@
             // Start file download
             saveAs(blob, filename);
           });
+
+          // NOTES
+          //
+          // 1. Other approaches to loading data include:
+          //
+          //    * Embed JSON string in HTML, get text, and parse into object, e.g.
+          //
+          //      ```
+          //      <script type="application/json" id="data">{{ data|safe }}</script>
+          //      <script>var data = JSON.parse(jQuery('#data').text());</script>
+          //      ```
+          //
+          //    * Ajax
         })();
       </script>
     </article>
