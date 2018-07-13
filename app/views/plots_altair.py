@@ -12,7 +12,6 @@ class AltairViews:
     def __init__(self, request):
         self.request = request
 
-
     @view_config(route_name='api.altair', renderer='json')
     def api(self):
         """Data for the plots"""
@@ -27,7 +26,6 @@ class AltairViews:
         df = data(dataset)
 
         return df.to_dict(orient='records')
-
 
     @view_config(route_name='plots_altair', renderer='plots_altair.jinja2')
     def index(self):

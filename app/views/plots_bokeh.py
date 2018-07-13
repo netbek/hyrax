@@ -23,7 +23,6 @@ class BokehViews:
     def __init__(self, request):
         self.request = request
 
-
     @view_config(route_name='api.bokeh', renderer='json')
     def api(self):
         """Data for the plots"""
@@ -38,7 +37,6 @@ class BokehViews:
         df = data(dataset)
 
         return df.to_dict(orient='list')
-
 
     @view_config(route_name='plots_bokeh', renderer='plots_bokeh.jinja2')
     def index(self):
@@ -60,12 +58,14 @@ class BokehViews:
             ('species', '@species'),
         ])
 
-        p = figure(title='Iris Morphology', tools=[hover, 'pan', 'wheel_zoom', 'reset'], active_scroll='wheel_zoom')
+        p = figure(title='Iris Morphology', tools=[
+                   hover, 'pan', 'wheel_zoom', 'reset'], active_scroll='wheel_zoom')
 
         p.xaxis.axis_label = 'petalLength'
         p.yaxis.axis_label = 'sepalLength'
 
-        p.circle(x='petalLength', y='sepalLength', color=fill_color, fill_alpha=0.5, size=10, source=source)
+        p.circle(x='petalLength', y='sepalLength', color=fill_color,
+                 fill_alpha=0.5, size=10, source=source)
 
         # Save plot
         script, div = components(p)

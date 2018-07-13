@@ -66,7 +66,6 @@ class Ggplot2Views:
     def __init__(self, request):
         self.request = request
 
-
     @view_config(route_name='plots_ggplot2', renderer='plots_ggplot2.jinja2')
     def index(self):
         """Render the plots"""
