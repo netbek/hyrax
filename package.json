@@ -31,8 +31,11 @@
     "safari >= 6",
     "samsung >= 5"
   ],
+  "resolutions": {
+    "eslint-scope": "3.7.1"
+  },
   "dependencies": {
-    "@babel/standalone": "^7.0.0-beta.51",
+    "@babel/standalone": "^7.0.0-beta.53",
     "@netbek/finch": "0.0.8",
     "bokehjs": "0.12.16",
     "datatables.net": "^1.10.19",
@@ -46,8 +49,8 @@
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
-    "babel-eslint": "^8.2.3",
-    "babel-loader": "^7.1.4",
+    "babel-eslint": "^8.2.6",
+    "babel-loader": "^7.1.5",
     "babel-plugin-transform-object-assign": "^6.22.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-plugin-transform-remove-strict-mode": "0.0.2",
@@ -58,17 +61,17 @@
     "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-babel": "^5.1.0",
     "eslint-plugin-dollar-sign": "^1.0.1",
-    "eslint-plugin-html": "^4.0.3",
-    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-html": "^4.0.5",
+    "eslint-plugin-import": "^2.13.0",
     "eslint-plugin-jsdoc": "^3.7.1",
-    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-jsx-a11y": "^6.1.1",
     "eslint-plugin-markdown": "^1.0.0-beta.6",
-    "eslint-plugin-prettier": "^2.6.0",
-    "eslint-plugin-react": "^7.8.2",
+    "eslint-plugin-prettier": "^2.6.2",
+    "eslint-plugin-react": "^7.10.0",
     "gulp": "^3.9.1",
     "livereload": "^0.7.0",
     "open": "0.0.5",
-    "prettier": "^1.12.1",
+    "prettier": "^1.13.7",
     "run-sequence": "^2.2.1"
   }
 }
