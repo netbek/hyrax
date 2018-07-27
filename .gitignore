@@ -3,3 +3,4 @@
 app/cache/
 node_modules/
 venv/
+.vscode
