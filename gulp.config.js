@@ -9,9 +9,9 @@ module.exports = {
     https: false,
     browsers: {
       default: 'firefox',
-      darwin: 'google chrome',
-      linux: 'google-chrome',
-      win32: 'chrome'
+      darwin: 'firefox',
+      linux: 'firefox',
+      win32: 'firefox'
     }
   }
 };
