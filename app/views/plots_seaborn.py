@@ -1,10 +1,12 @@
 import hashlib
 import os.path
+import numpy as np
+import pandas as pd
 import matplotlib
-matplotlib.use('svg')
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+import calmap
 
 from vega_datasets import data
 from pandas.util import hash_pandas_object
@@ -15,6 +17,7 @@ APP_DIR = 'app'
 PLOTS_DIR = 'app/cache/plots'
 CACHE = False
 
+PNG = 'PNG'
 SVG = 'SVG'
 
 
@@ -37,7 +40,7 @@ def get_plot_cache_basename(namespace, df, *args):
 
 def get_plot_cache_path(namespace, df, format, *args):
     basename = get_plot_cache_basename(namespace, df, *args)
-    extname = 'svg'  # TODO Derive from format
+    extname = 'png' if format == PNG else 'svg'
     return '{}/{}.{}'.format(PLOTS_DIR, basename, extname)
 
 
@@ -48,9 +51,10 @@ def get_plot_cache(namespace, df, format, *args):
     return (path, url, os.path.isfile(path))
 
 
-def save_plot(ax, path, width, height):
-    fig = ax.get_figure()
-    fig.set_size_inches(inch(width), inch(height))
+def save_figure(fig, path, width=None, height=None):
+    if width and height:
+        fig.set_size_inches(inch(width), inch(height))
+
     fig.set_dpi(96)
     fig.set_tight_layout(True)
     fig.savefig(path)
@@ -59,16 +63,45 @@ def save_plot(ax, path, width, height):
     return True
 
 
-def plot_iris_scatter(df, format=SVG, width=400, height=300, style='darkgrid'):
-    path, url, has_cache = get_plot_cache('plot_iris_scatter', df, format, width, height, style)
+def plot_iris_scatter(data, format=SVG, width=400, height=300, style='darkgrid'):
+    path, url, has_cache = get_plot_cache('plot_iris_scatter', data, format, width, height, style)
 
     if has_cache:
         return url
 
     sns.set_style(style)
     ax = sns.scatterplot(x='petalLength', y='sepalLength', hue='species',
-                         palette='Spectral', data=df)
-    save_plot(ax, path, width, height)
+                         palette='Spectral', data=data)
+    save_figure(ax.get_figure(), path, width, height)
+
+    return url
+
+
+def plot_year_heatmap(data, format=SVG, width=800, height=200, style='whitegrid'):
+    path, url, has_cache = get_plot_cache('plot_year_heatmap', data, format, width, height, style)
+
+    if has_cache:
+        return url
+
+    plt.style.use('seaborn-{}'.format(style))
+    ax = calmap.yearplot(data, how=None, dayticks=(0, 2, 4, 6),
+                         cmap='YlGn', fillcolor='#eeeeee')
+    save_figure(ax.get_figure(), path, width, height)
+
+    return url
+
+
+def plot_calendar_heatmap(data, format=SVG, width=800, height=200, style='whitegrid'):
+    path, url, has_cache = get_plot_cache(
+        'plot_calendar_heatmap', data, format, width, height, style)
+
+    if has_cache:
+        return url
+
+    plt.style.use('seaborn-{}'.format(style))
+    fig, ax = calmap.calendarplot(data, how=None, dayticks=(0, 2, 4, 6),
+                                  cmap='YlGn', fillcolor='#eeeeee')
+    save_figure(fig, path, width, height)
 
     return url
 
@@ -82,6 +115,27 @@ class SeabornViews:
         """Render the plots"""
         plots = []
 
+        np.random.seed(sum(map(ord, 'calmap')))
+        all_days = pd.date_range('1/15/2014', periods=700, freq='D')
+        days = np.sort(np.random.choice(all_days, 50))
+
+        # Year heatmap
+        events = pd.Series(np.random.randn(len(days)), index=days)
+        url = plot_year_heatmap(events)
+        plots.append({
+            'title': 'Year heatmap',
+            'url': url
+        })
+
+        # Calendar heatmap
+        events = pd.Series(np.random.randn(len(days)), index=days)
+        url = plot_calendar_heatmap(events)
+        plots.append({
+            'title': 'Calendar heatmap',
+            'url': url
+        })
+
+        # Scatterplot
         df = data('iris')
         url = plot_iris_scatter(df)
         plots.append({
