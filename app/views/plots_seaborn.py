@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import calmap
 
+from functools import partial, wraps
+from inspect import getargspec, formatargspec, stack
 from vega_datasets import data
 from pandas.util import hash_pandas_object
 from pyramid.view import view_config
@@ -19,6 +21,14 @@ CACHE = False
 
 PNG = 'PNG'
 SVG = 'SVG'
+
+ALT = 'ALT'
+MPL = 'MPL'
+SNS = 'SNS'
+
+MPL_STYLES = {
+    'whitegrid': 'seaborn-whitegrid'
+}
 
 
 def to_url(filename):
@@ -32,26 +42,7 @@ def inch(px):
     return px / 96
 
 
-def get_plot_cache_basename(namespace, df, *args):
-    df_str = hash_pandas_object(df).to_string()
-    cache_key = '{}|{}|{}'.format(namespace, df_str, '|'.join([str(item) for item in args]))
-    return hashlib.sha256(cache_key).hexdigest()
-
-
-def get_plot_cache_path(namespace, df, format, *args):
-    basename = get_plot_cache_basename(namespace, df, *args)
-    extname = 'png' if format == PNG else 'svg'
-    return '{}/{}.{}'.format(PLOTS_DIR, basename, extname)
-
-
-def get_plot_cache(namespace, df, format, *args):
-    path = get_plot_cache_path(namespace, df, format, *args)
-    url = to_url(path)
-
-    return (path, url, os.path.isfile(path))
-
-
-def save_figure(fig, path, width=None, height=None):
+def save_mpl_figure(fig, path, width=None, height=None):
     if width and height:
         fig.set_size_inches(inch(width), inch(height))
 
@@ -63,47 +54,63 @@ def save_figure(fig, path, width=None, height=None):
     return True
 
 
-def plot_iris_scatter(data, format=SVG, width=400, height=300, style='darkgrid'):
-    path, url, has_cache = get_plot_cache('plot_iris_scatter', data, format, width, height, style)
+def setup_plot(lib, cache=True):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(data, *args, **kwargs):
+            argspec = getargspec(func)
+            format = kwargs.get('format', argspec.defaults[-2])
+            style = kwargs.get('style', argspec.defaults[-1])
 
-    if has_cache:
-        return url
+            extname = 'png' if format == PNG else 'svg'
+            cache_key = '{}|{}|{}|{}|{}'.format(
+                func.__name__,
+                hash_pandas_object(data).to_string(),
+                format,
+                '|'.join([str(value) for value in argspec.defaults]),
+                '|'.join([str(value) for value in kwargs.values()]),
+            )
+            basename = hashlib.sha256(cache_key).hexdigest()
+            path = '{}/{}.{}'.format(PLOTS_DIR, basename, extname)
+            url = to_url(path)
 
-    sns.set_style(style)
+            if not cache or not os.path.isfile(path):
+                if lib == SNS:
+                    with sns.axes_style(style):
+                        figure, width, height = func(data, *args, **kwargs)
+                        save_mpl_figure(figure, path, width, height)
+
+                elif lib == MPL:
+                    with plt.style.context(MPL_STYLES[style]):
+                        figure, width, height = func(data, *args, **kwargs)
+                        save_mpl_figure(figure, path, width, height)
+
+            return path, url
+        return wrapper
+    return decorator
+
+
+@setup_plot(SNS)
+def plot_iris_scatter(data, width=400, height=300, format=SVG, style='darkgrid'):
     ax = sns.scatterplot(x='petalLength', y='sepalLength', hue='species',
                          palette='Spectral', data=data)
-    save_figure(ax.get_figure(), path, width, height)
-
-    return url
+    return ax.get_figure(), width, height
 
 
-def plot_year_heatmap(data, format=SVG, width=800, height=200, style='whitegrid'):
-    path, url, has_cache = get_plot_cache('plot_year_heatmap', data, format, width, height, style)
-
-    if has_cache:
-        return url
-
-    plt.style.use('seaborn-{}'.format(style))
+@setup_plot(MPL)
+def plot_year_heatmap(data, width=800, height=200, format=SVG, style='whitegrid'):
     ax = calmap.yearplot(data, how=None, dayticks=(0, 2, 4, 6),
                          cmap='YlGn', fillcolor='#eeeeee')
-    save_figure(ax.get_figure(), path, width, height)
-
-    return url
+    return ax.get_figure(), width, height
 
 
-def plot_calendar_heatmap(data, format=SVG, width=800, height=200, style='whitegrid'):
-    path, url, has_cache = get_plot_cache(
-        'plot_calendar_heatmap', data, format, width, height, style)
-
-    if has_cache:
-        return url
-
-    plt.style.use('seaborn-{}'.format(style))
+@setup_plot(MPL)
+def plot_calendar_heatmap(data, width=800, height=200, format=SVG, style='whitegrid'):
     fig, ax = calmap.calendarplot(data, how=None, dayticks=(0, 2, 4, 6),
+                                  yearlabel_kws={'color': 'black',
+                                                 'fontsize': 10, 'fontweight': 'normal'},
                                   cmap='YlGn', fillcolor='#eeeeee')
-    save_figure(fig, path, width, height)
-
-    return url
+    return fig, width, height * len(data.index.year.unique())
 
 
 class SeabornViews:
@@ -116,12 +123,12 @@ class SeabornViews:
         plots = []
 
         np.random.seed(sum(map(ord, 'calmap')))
-        all_days = pd.date_range('1/15/2014', periods=700, freq='D')
+        all_days = pd.date_range('1/15/2014', periods=1200, freq='D')
         days = np.sort(np.random.choice(all_days, 50))
 
         # Year heatmap
         events = pd.Series(np.random.randn(len(days)), index=days)
-        url = plot_year_heatmap(events)
+        path, url = plot_year_heatmap(events)
         plots.append({
             'title': 'Year heatmap',
             'url': url
@@ -129,7 +136,7 @@ class SeabornViews:
 
         # Calendar heatmap
         events = pd.Series(np.random.randn(len(days)), index=days)
-        url = plot_calendar_heatmap(events)
+        path, url = plot_calendar_heatmap(events)
         plots.append({
             'title': 'Calendar heatmap',
             'url': url
@@ -137,7 +144,7 @@ class SeabornViews:
 
         # Scatterplot
         df = data('iris')
-        url = plot_iris_scatter(df)
+        path, url = plot_iris_scatter(df)
         plots.append({
             'title': 'Scatterplot',
             'url': url
