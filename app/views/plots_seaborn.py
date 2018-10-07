@@ -9,22 +9,22 @@ from .helpers.constants import PNG, SVG
 from .helpers.plots import sns_plot, mpl_plot
 
 
-@sns_plot()
-def plot_iris_scatter(data, width=400, height=300, format=SVG, style='darkgrid'):
+@sns_plot
+def plot_iris_scatter(data, width=400, height=300, style='darkgrid', format=SVG, cache=True):
     ax = sns.scatterplot(x='petalLength', y='sepalLength', hue='species',
                          palette='Spectral', data=data)
     return ax.get_figure(), width, height
 
 
-@mpl_plot()
-def plot_year_heatmap(data, width=800, height=200, format=SVG, style='whitegrid'):
+@mpl_plot
+def plot_year_heatmap(data, width=800, height=200, style='whitegrid', format=SVG, cache=True):
     ax = calmap.yearplot(data, how=None, dayticks=(0, 2, 4, 6),
                          cmap='YlGn', fillcolor='#eeeeee')
     return ax.get_figure(), width, height
 
 
-@mpl_plot()
-def plot_calendar_heatmap(data, width=800, height=200, format=SVG, style='whitegrid'):
+@mpl_plot
+def plot_calendar_heatmap(data, width=800, height=200, style='whitegrid', format=SVG, cache=True):
     fig, ax = calmap.calendarplot(data, how=None, dayticks=(0, 2, 4, 6),
                                   yearlabel_kws={'color': 'black',
                                                  'fontsize': 10, 'fontweight': 'normal'},

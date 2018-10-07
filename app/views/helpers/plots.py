@@ -6,7 +6,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from functools import partial, wraps
+from functools import wraps
 from inspect import getargspec
 from pandas.util import hash_pandas_object
 from .constants import APP_DIR, PLOTS_DIR, PNG, SVG, MPL_STYLES
@@ -39,14 +39,16 @@ def save_mpl_figure(path, fig, width=None, height=None):
     return True
 
 
-def parse_args(argspec, kwargs):
+def parse_plot_args(argspec, kwargs):
+    style = kwargs.get('style', argspec.defaults[-3])
     format = kwargs.get('format', argspec.defaults[-2])
-    style = kwargs.get('style', argspec.defaults[-1])
-    return format, style
+    cache = kwargs.get('cache', argspec.defaults[-1])
+
+    return style, format, cache
 
 
-def get_cache(func_name, data, argspec, kwargs):
-    format, style = parse_args(argspec, kwargs)
+def get_plot_cache(func_name, data, argspec, kwargs):
+    style, format, cache = parse_plot_args(argspec, kwargs)
     extname = 'png' if format == PNG else 'svg'
     cache_key = '{}|{}|{}|{}|{}'.format(
         func_name,
@@ -73,37 +75,33 @@ def alt_plot(func):
     return wrapper
 
 
-def sns_plot(cache=True):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(data, *args, **kwargs):
-            argspec = getargspec(func)
-            format, style = parse_args(argspec, kwargs)
-            path, url, has_cache = get_cache(func.__name__, data, argspec, kwargs)
+def mpl_plot(func):
+    @wraps(func)
+    def wrapper(data, *args, **kwargs):
+        argspec = getargspec(func)
+        style, format, cache = parse_plot_args(argspec, kwargs)
+        path, url, has_cache = get_plot_cache(func.__name__, data, argspec, kwargs)
 
-            if not cache or not has_cache:
-                with sns.axes_style(style):
-                    fig, width, height = func(data, *args, **kwargs)
-                    save_mpl_figure(path, fig, width, height)
+        if not cache or not has_cache:
+            with plt.style.context(MPL_STYLES[style]):
+                fig, width, height = func(data, *args, **kwargs)
+                save_mpl_figure(path, fig, width, height)
 
-            return path, url
-        return wrapper
-    return decorator
+        return path, url
+    return wrapper
 
 
-def mpl_plot(cache=True):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(data, *args, **kwargs):
-            argspec = getargspec(func)
-            format, style = parse_args(argspec, kwargs)
-            path, url, has_cache = get_cache(func.__name__, data, argspec, kwargs)
+def sns_plot(func):
+    @wraps(func)
+    def wrapper(data, *args, **kwargs):
+        argspec = getargspec(func)
+        style, format, cache = parse_plot_args(argspec, kwargs)
+        path, url, has_cache = get_plot_cache(func.__name__, data, argspec, kwargs)
 
-            if not cache or not has_cache:
-                with plt.style.context(MPL_STYLES[style]):
-                    fig, width, height = func(data, *args, **kwargs)
-                    save_mpl_figure(path, fig, width, height)
+        if not cache or not has_cache:
+            with sns.axes_style(style):
+                fig, width, height = func(data, *args, **kwargs)
+                save_mpl_figure(path, fig, width, height)
 
-            return path, url
-        return wrapper
-    return decorator
+        return path, url
+    return wrapper
