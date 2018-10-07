@@ -1,11 +1,23 @@
-import json
 import altair as alt
+
 from vega_datasets import data
 from pyramid.view import view_config
+from .helpers.constants import PNG, SVG
+from .helpers.plots import alt_plot, to_vega
 
 
-def to_spec(plot):
-    return json.dumps(plot.to_dict(), indent=2)
+@alt_plot
+def plot_iris_scatter(data, width=400, height=300):
+    p = alt.Chart(data).mark_circle().encode(
+        x='petalLength:Q',
+        y='sepalLength:Q',
+        color='species:N'
+    ).properties(
+        width=width,
+        height=height
+    )
+
+    return p, width, height
 
 
 class AltairViews:
@@ -33,18 +45,10 @@ class AltairViews:
         plots = []
 
         # Scatterplot
-        p = alt.Chart('/api/altair?dataset=iris').mark_circle().encode(
-            x='petalLength:Q',
-            y='sepalLength:Q',
-            color='species:N'
-        ).properties(
-            width=200,
-            height=200
-        )
-
+        spec = plot_iris_scatter('/api/altair?dataset=iris')
         plots.append({
             'title': 'Scatterplot',
-            'spec': to_spec(p)
+            'spec': spec
         })
 
         # Histogram
@@ -61,7 +65,7 @@ class AltairViews:
 
         plots.append({
             'title': 'Histogram',
-            'spec': to_spec(p)
+            'spec': to_vega(p)
         })
 
         # Scatterplot matrix
@@ -80,7 +84,7 @@ class AltairViews:
 
         plots.append({
             'title': 'Scatterplot matrix',
-            'spec': to_spec(p)
+            'spec': to_vega(p)
         })
 
         return {
