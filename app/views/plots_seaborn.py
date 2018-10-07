@@ -9,7 +9,7 @@ import seaborn as sns
 import calmap
 
 from functools import partial, wraps
-from inspect import getargspec, formatargspec, stack
+from inspect import getargspec
 from vega_datasets import data
 from pandas.util import hash_pandas_object
 from pyramid.view import view_config
