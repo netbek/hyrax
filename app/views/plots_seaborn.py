@@ -42,7 +42,7 @@ def inch(px):
     return px / 96
 
 
-def save_mpl_figure(fig, path, width=None, height=None):
+def save_mpl_figure(path, fig, width=None, height=None):
     if width and height:
         fig.set_size_inches(inch(width), inch(height))
 
@@ -77,13 +77,13 @@ def setup_plot(lib, cache=True):
             if not cache or not os.path.isfile(path):
                 if lib == SNS:
                     with sns.axes_style(style):
-                        figure, width, height = func(data, *args, **kwargs)
-                        save_mpl_figure(figure, path, width, height)
+                        fig, width, height = func(data, *args, **kwargs)
+                        save_mpl_figure(path, fig, width, height)
 
                 elif lib == MPL:
                     with plt.style.context(MPL_STYLES[style]):
-                        figure, width, height = func(data, *args, **kwargs)
-                        save_mpl_figure(figure, path, width, height)
+                        fig, width, height = func(data, *args, **kwargs)
+                        save_mpl_figure(path, fig, width, height)
 
             return path, url
         return wrapper
