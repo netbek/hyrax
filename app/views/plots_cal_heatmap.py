@@ -1,11 +1,55 @@
 import altair as alt
 import numpy as np
 import pandas as pd
-import uuid
 
 from pprint import pprint
+from bokeh.palettes import YlGn
+from datetime import date
+from uuid import uuid4
 from pyramid.view import view_config
 from .helpers.plots import to_vega
+
+
+def _year_heatmap_df(data, fill_value=None):
+    # Get subset series of first year's data
+    subset = data.first('1A')
+
+    # Make datetime index for each calendar day of subset
+    subset_index = pd.date_range(
+        start=pd.tseries.offsets.MonthBegin().rollback(subset.index.min()),
+        end=pd.tseries.offsets.MonthEnd().rollforward(subset.index.max()),
+        freq='D')
+
+    # Add values missing from datetime index, if any
+    subset = subset.resample('1D').sum().reindex(subset_index)
+
+    if fill_value is not None:
+        subset.fillna(fill_value, inplace=True)
+
+    last_iso_week = date(subset_index.max().year, 12, 28).isocalendar()[1]
+
+    # TODO Add tests
+    def get_gregorian_week(index):
+        iso_year, iso_week, iso_day = index.isocalendar()
+        if iso_week == 1 and index.month > 1:
+            return last_iso_week + 1
+        elif iso_week >= last_iso_week and index.month < 12:
+            return 0
+        else:
+            return iso_week
+
+    subset_df = pd.DataFrame({'value': subset})
+    subset_df['iso_week'] = subset_df.index.map(lambda index: index.isocalendar()[1])
+    subset_df['gregorian_week'] = subset_df.index.map(get_gregorian_week)
+    return subset_df
+
+
+def get_year_heatmap(data, fill_value=None, date_format='%-d %b %Y', color_domain=None, color_range=None):
+    df = _year_heatmap_df(data, fill_value=fill_value)
+    # https://github.com/altair-viz/altair/issues/1027#issuecomment-408481253
+    df['date'] = df.index.map(lambda index: index.strftime('%Y-%m-%dT%H:%M:%SZ'))
+    df['color'] = pd.cut(df['value'], bins=color_domain, right=False, labels=color_range)
+    return df.to_dict('records')
 
 
 class CalHeatmapViews:
@@ -18,43 +62,39 @@ class CalHeatmapViews:
         plots = []
 
         np.random.seed(24)
-        all_days = pd.date_range('1/15/2016', periods=1200, freq='D')
-        days = np.sort(np.random.choice(all_days, 50))
 
         # Year heatmap
-        events = pd.Series(np.random.randint(0, 100, size=len(days)), index=days)
+        days = pd.date_range('1/1/2016', periods=400, freq='D')
+        rows = pd.Series(np.random.randint(0, 100, size=len(days)), index=days)
 
-        # Get events in first year
-        events = events.first('1A')
+        domain = [0, 1, 25, 50, 100]
+        range = ['#eee'] + YlGn[3][::-1]
+        labels = ['0', '1-25', '25-50', '50-100']
+        heatmap = get_year_heatmap(rows, fill_value=0, color_domain=domain, color_range=range)
 
-        full_index = pd.date_range(start=events.index.min() + pd.tseries.offsets.MonthBegin(-1),
-                                   end=events.index.max() + pd.tseries.offsets.MonthEnd(0))
+        p = alt.LayerChart(alt.Data(values=heatmap)).configure_axis(grid=False).configure_legend(
+            symbolType='square').configure_view(strokeWidth=0)
 
-        events = events.resample('1D').sum().reindex(full_index).fillna(0)
+        # Plot without legend
+        p += alt.Chart().mark_rect().encode(
+            alt.Color('color:N', scale=alt.Scale(domain=range, range=range), legend=None),
+            alt.X('iso_week:N', sort=None, axis=alt.Axis(
+                title=None, ticks=False, offset=5, domain=False)),
+            alt.Y('date:N', sort=['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+                  timeUnit='day', axis=alt.Axis(
+                      format='%a', title=None, ticks=False, offset=5, domain=False)),
+            tooltip=[alt.Tooltip(field='date', type='temporal', format='%-d %b %Y'), 'value:Q']
+        )
 
-        def mapper(index, value):
-            iso = index.isocalendar()
-            # x = 53 if iso[1] == 1 and index.month == 12 else iso[1]
-            x = iso[1]
-            y = iso[2]
-            date = index.strftime('%-d %b %Y')
-
-            return dict(x=x, y=y, value=value, date=date)
-
-        values = [mapper(index, value) for index, value in events.items()]
-
-        # Make a binned color scale
-        domain = [0, 1, 10, events.max()]
-        range = ['#eee', '#ffffcc', '#ff0000', '#006837']
-        scale = alt.Scale(type='bin-linear', domain=domain, range=range)
-
-        p = alt.Chart(alt.Data(values=values)).mark_rect().encode(
-            alt.Color('value:Q', bin=True, scale=scale), x='x:N', y='y:N',
-            tooltip=['date:N', 'value:Q']).configure_axis(grid=False).configure_view(strokeWidth=0)
+        # Empty plot with legend
+        p += alt.Chart(alt.Data(values=labels)).mark_rect().encode(
+            alt.Color('color:N', scale=alt.Scale(domain=labels),
+                      legend=alt.Legend(title='value', values=labels))
+        )
 
         plots.append({
             'title': 'Year heatmap',
-            'id': 'plot-{}'.format(uuid.uuid4()),
+            'id': 'plot-{}'.format(uuid4()),
             'spec': to_vega(p)
         })
 
