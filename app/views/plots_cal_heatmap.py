@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from pprint import pprint
-from bokeh.palettes import YlGn
+from bokeh.palettes import viridis, YlGn
 from datetime import date, datetime
 from uuid import uuid4
 from pyramid.view import view_config
@@ -22,20 +22,40 @@ def get_bin_labels(bins, separator='-'):
     labels = []
     stop = count - 1
     for i in range(stop):
-        start = bins[i]
-        end = bins[i + 1]
-        if end - start == 1:
-            labels.append(str(start))
+        left = bins[i]
+        right = bins[i + 1]
+        if right - left == 1:
+            labels.append(str(left))
             if i == stop - 1:
-                labels.append(str(end))
+                labels.append(str(right))
         else:
-            labels.append('{}{}{}'.format(str(start), separator, str(end)))
+            labels.append('{}{}{}'.format(str(left), separator, str(right)))
     return labels
 
 
-def plot_year_heatmap(data, bins, palette, legend_labels, expand=False, fill_value=None, size=17, tooltip_date_format='%-d %b %Y'):
-    values = data.first('A')
-    # values = data.copy(deep=True)
+def format_label(value, type='int'):
+    if type == 'int':
+        return str(int(value))
+    elif type == 'float':
+        return str(float(value))
+    else:
+        return str(value)
+
+
+def make_bins_and_labels(values, quantiles, precision=0, type='int', separator='-'):
+    bin_values = pd.qcut(values, quantiles, precision=precision).cat.categories.values
+    bins = [v.left for v in bin_values]
+    bins.append(bin_values[-1].right)
+
+    labels = ['{}{}{}'.format(
+        format_label(v.left, type), separator, format_label(v.right, type)) for v in bin_values]
+
+    return bins, labels
+
+
+def year_heatmap(data, bins, palette, legend_labels, expand=False, fill_value=None, size=17, axis_offset=7, date_format='%-d %b %Y', value_title='value'):
+    """Build a calendar heatmap (Altair/Vega)."""
+    values = data.copy(deep=True)
 
     if expand:
         # Add missing days
@@ -49,69 +69,64 @@ def plot_year_heatmap(data, bins, palette, legend_labels, expand=False, fill_val
 
     values = pd.DataFrame({
         'value': values,
-        'week': values.index.week,
         # https://github.com/altair-viz/altair/issues/1027#issuecomment-408481253
         'date': values.index.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'color': pd.cut(values, bins=bins, right=False, labels=palette)
     })
 
-    # values['week'] = values.index.map(lambda index: '{}{:02d}'.format(index.year, index.week))
+    # Number of unique weekdays
+    y_count = values.index.dayofweek.nunique()
 
-    # last_iso_week = date(index.max().year, 12, 28).isocalendar()[1]
-    # def get_gregorian_week(index):
-    #     iso_year, iso_week, iso_day = index.isocalendar()
-    #     if iso_week == 1 and index.month > 1:
-    #         return last_iso_week + 1
-    #     elif iso_week >= last_iso_week and index.month < 12:
-    #         return 0
-    #     else:
-    #         return iso_week
-    # values['week'] = values.index.map(get_gregorian_week)
+    # Add zero-based week number. We compute the value manually instead of using ISO week because
+    # it's easier to handle date ranges over multiple years.
+    week_start = values.index.to_period('W').start_time
+    unique_week_start = list(week_start.unique())
+    week = [unique_week_start.index(ts) for ts in week_start]
+    values['week'] = week
 
-    # X axis labels
-    x = values.groupby('week').first().sort_values('date').loc[:, ['date']]
-    x['month'] = pd.to_datetime(x['date']).dt.strftime('%b')
-    x = x.reset_index(level=0).loc[:, ['week', 'month']]
-    x['index'] = x.index
-    x_mean_index = x.groupby('month')['index'].mean().astype(int).get_values()
-    x.loc[~x['index'].isin(x_mean_index), 'month'] = ''
-    x = x.loc[:, ['week', 'month']]
+    # Make labels for X axis. We operate on a narrower dataframe because it's more performant.
+    x = pd.DataFrame({'week': week, 'week_start': week_start}, index=values.index)
+    x_labels = x.groupby('week').first()
+    x_labels['month'] = x_labels['week_start'].dt.strftime('%b')
+    x_labels['year'] = x_labels['week_start'].dt.strftime('%Y')
+    x_labels = x_labels.reset_index(level=0)
+    x_labels['index'] = x_labels.index
+    x_labels_mean = x_labels.groupby(['year', 'month'])['index'].mean().astype(int).get_values()
+    x_labels.loc[~x_labels['index'].isin(x_labels_mean), 'month'] = ''
+    x_labels = x_labels.loc[:, ['week', 'month']]
 
     # Prepare data for Vega
     values = values.to_dict('records')
-    x_labels = x.to_dict('records')
+    x_labels = x_labels.to_dict('records')
 
-    # Make container chart
-    chart = alt.LayerChart(alt.Data(values=values)).configure_axis(grid=False).\
-        configure_legend(symbolType='square').\
-        configure_scale(rangeStep=size, textXRangeStep=size).configure_view(strokeWidth=0)
+    # Container chart
+    p = alt.LayerChart(alt.Data(values=values)).configure_axis(grid=False).\
+        configure_legend(symbolType='square').configure_scale(rangeStep=size, textXRangeStep=size).\
+        configure_view(strokeWidth=0)
 
-    # Add chart for data
-    chart += alt.Chart().mark_rect().encode(
+    # Chart for data
+    p += alt.Chart().mark_rect().encode(
         alt.Color('color:N', scale=alt.Scale(domain=palette, range=palette), legend=None),
-        # alt.X('week:N', sort=None, axis=alt.Axis(
-        #     title=None, ticks=False, offset=5, domain=False)),
         alt.X('week:N', sort=None, axis=None),
-        alt.Y('date:N', sort=['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
-              timeUnit='day', axis=alt.Axis(
-                  format='%a', title=None, ticks=False, offset=5, domain=False)),
-        tooltip=[alt.Tooltip(field='date', type='temporal', format=tooltip_date_format), 'value:Q']
+        alt.Y('date:N', sort=['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeUnit='day',
+              axis=alt.Axis(format='%a', title=None, ticks=False,
+                            offset=axis_offset, domain=False)),
+        tooltip=[alt.Tooltip('date:T', format=date_format),
+                 alt.Tooltip('value:Q', title=value_title)]
     )
 
-    # Add empty chart for legend
-    chart += alt.Chart(alt.Data(values=legend_labels)).mark_rect().encode(
+    # Empty chart for legend
+    p += alt.Chart(alt.Data(values=legend_labels)).mark_rect().encode(
         alt.Color('color:N', scale=alt.Scale(domain=legend_labels),
-                  legend=alt.Legend(title='value', values=legend_labels)))
+                  legend=alt.Legend(title=value_title, values=legend_labels)))
 
-    # Add empty chart for X axis labels
-    # chart += alt.Chart(alt.Data(values=x_labels)).mark_text(
-    #     dy=-10, fontSize=10, tooltip='').encode(
-    #         alt.X('week:N', sort=None, axis=None), alt.Y(value=0), alt.Text('month:N'))
-    chart += alt.Chart(alt.Data(values=x_labels)).mark_text(
-        baseline='top', dy=7, fontSize=10, tooltip='').encode(
-            alt.X('week:N', sort=None, axis=None), alt.Y(value=size*7), alt.Text('month:N'))
+    # Empty chart for X axis labels
+    p += alt.Chart(alt.Data(values=x_labels)).mark_text(
+        baseline='top', dy=axis_offset, tooltip='').encode(
+            alt.X('week:N', sort=None, axis=None), alt.Y(value=size*y_count),
+            alt.Text('month:N'))
 
-    return chart
+    return p
 
 
 class CalHeatmapViews:
@@ -127,14 +142,16 @@ class CalHeatmapViews:
 
         # Year heatmap
         partial_year_days = pd.date_range('6/10/2016', periods=10, freq='2D')
-        multiple_years_days = pd.date_range('1/1/2016', periods=400, freq='D')
+        multiple_years_days = pd.date_range('6/10/2016', periods=400, freq='D')
 
         rows = pd.Series(np.random.randint(0, 100, size=len(partial_year_days)),
                          index=partial_year_days)
-        bins = [0, 1, 25, 50, 100]
-        palette = ['#ddd'] + YlGn[3][::-1]
-        legend_labels = get_bin_labels(bins)
-        p = plot_year_heatmap(rows, bins, palette, legend_labels)
+
+        quantiles = 5
+        bins, legend_labels = make_bins_and_labels(rows, quantiles)
+        palette = viridis(quantiles)
+
+        p = year_heatmap(rows, bins, palette, legend_labels)
         plots.append({
             'title': 'Year heatmap with partial data, semi-auto bin labels (expand=False, fill_value=None, low=0, high=100)',
             'id': 'plot-{}'.format(uuid4()),
@@ -146,7 +163,7 @@ class CalHeatmapViews:
         bins = [0, 1, 25, 50, 100]
         palette = ['#ddd'] + YlGn[3][::-1]
         legend_labels = get_bin_labels(bins)
-        p = plot_year_heatmap(rows, bins, palette, legend_labels, expand=True)
+        p = year_heatmap(rows, bins, palette, legend_labels, expand=True)
         plots.append({
             'title': 'Year heatmap with partial data, semi-auto bin labels (expand=True, fill_value=None, low=0, high=100)',
             'id': 'plot-{}'.format(uuid4()),
@@ -158,7 +175,7 @@ class CalHeatmapViews:
         bins = [0, 1, 25, 50, 100]
         palette = ['#ddd'] + YlGn[3][::-1]
         legend_labels = get_bin_labels(bins)
-        p = plot_year_heatmap(rows, bins, palette, legend_labels, expand=True, fill_value=0)
+        p = year_heatmap(rows, bins, palette, legend_labels, expand=True, fill_value=0)
         plots.append({
             'title': 'Year heatmap with partial data, semi-auto bin labels (expand=True, fill_value=0, low=0, high=100)',
             'id': 'plot-{}'.format(uuid4()),
@@ -170,7 +187,7 @@ class CalHeatmapViews:
         bins = [0, 1, 25, 50, 100]
         palette = ['#ddd'] + YlGn[3][::-1]
         legend_labels = get_bin_labels(bins)
-        p = plot_year_heatmap(rows, bins, palette, legend_labels)
+        p = year_heatmap(rows, bins, palette, legend_labels)
         plots.append({
             'title': 'Year heatmap with semi-auto bin labels (expand=False, fill_value=None, low=0, high=20)',
             'id': 'plot-{}'.format(uuid4()),
@@ -182,7 +199,7 @@ class CalHeatmapViews:
         bins = [0, 1, 25, 50, 100]
         palette = ['#ddd'] + YlGn[3][::-1]
         legend_labels = get_bin_labels(bins)
-        p = plot_year_heatmap(rows, bins, palette, legend_labels)
+        p = year_heatmap(rows, bins, palette, legend_labels)
         plots.append({
             'title': 'Year heatmap with semi-auto bin labels (expand=False, fill_value=None, low=0, high=100)',
             'id': 'plot-{}'.format(uuid4()),
@@ -194,7 +211,7 @@ class CalHeatmapViews:
         bins = [0, 1, 25, 50, 101, rows.max()+1]
         palette = ['#ddd'] + YlGn[4][::-1]
         legend_labels = ['0', '1-25', '25-50', '50-100', '>100']
-        p = plot_year_heatmap(rows, bins, palette, legend_labels)
+        p = year_heatmap(rows, bins, palette, legend_labels)
         plots.append({
             'title': 'Year heatmap with manual bin labels (expand=False, fill_value=None, low=0, high=110)',
             'id': 'plot-{}'.format(uuid4()),
