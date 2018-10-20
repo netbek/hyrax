@@ -1,9 +1,57 @@
 import altair as alt
+import inspect
+
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments.formatters import HtmlFormatter
 
 from vega_datasets import data
 from pyramid.view import view_config
 from .helpers.constants import PNG, SVG
 from .helpers.plots import alt_plot, to_vega
+
+
+def example_scatterplot():
+    import altair as alt
+    from vega_datasets import data
+
+    df = data.iris()
+
+    p = alt.Chart(df).mark_circle().encode(
+        x='petalLength:Q',
+        y='sepalLength:Q',
+        color='species:N'
+    ).properties(
+        width=200,
+        height=200
+    )
+
+    return p
+
+
+def get_function_source(fn):
+    src = inspect.getsource(fn)
+    lines = src.splitlines()
+
+    # Get indentation
+    line = lines[1]
+    indent = len(line) - len(line.lstrip())
+
+    output = []
+    count = len(lines)
+    for i, line in enumerate(lines):
+        # Ignore function declaration and final return statement
+        if i == 0 or i == count - 1:
+            continue
+        # Strip indentation
+        output.append(line[indent:])
+
+    code = '\n'.join(output).strip()
+    lexer = PythonLexer()
+    formatter = HtmlFormatter(noclasses=True)
+    code = highlight(code, lexer, formatter)
+
+    return code
 
 
 @alt_plot
@@ -45,10 +93,10 @@ class AltairViews:
         plots = []
 
         # Scatterplot
-        spec = plot_iris_scatter('/api/altair?dataset=iris')
         plots.append({
             'title': 'Scatterplot',
-            'spec': spec
+            'spec': example_scatterplot().to_json(),
+            'source': get_function_source(example_scatterplot)
         })
 
         # Histogram
