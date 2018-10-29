@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <title>Altair</title>
+    <script src="/node_modules/lodash/lodash.min.js"></script>
     <script src="/node_modules/vega/build/vega.min.js"></script>
     <script src="/node_modules/vega-lite/build/vega-lite.min.js"></script>
     <script src="/node_modules/vega-embed/build/vega-embed.min.js"></script>
@@ -19,19 +20,31 @@
 
         <script>
           (function() {
-            var spec = {{ item.spec|safe }};
-            vegaEmbed(
-              '#item-{{ loop.index }}',
-              spec,
-              {
-                actions: {
-                  export: false,
-                  source: true,
-                  compiled: false,
-                  editor: false
-                }
+            // Some Vega-Lite v2 specs, e.g. repeated chart, have duplicate datasets when compiled
+            // to Vega v4. In Vega v3, the datasets aren't duplicated. The following workaround
+            // removes duplicates from the root `data` value.
+            var vlSpec = {{ item.spec|safe }};
+            var vgSpec = vl.compile(vlSpec).spec;
+
+            vgSpec.data = vgSpec.data
+              .map(function(v) {
+                return v.name;
+              })
+              .filter(function(v, i, a) {
+                return a.indexOf(v) === i;
+              })
+              .map(function(v) {
+                return _.find(vgSpec.data, ['name', v]);
+              });
+
+            vegaEmbed('#item-{{ loop.index }}', vgSpec, {
+              actions: {
+                export: false,
+                source: true,
+                compiled: false,
+                editor: false
               }
-            );
+            });
           })();
         </script>
 

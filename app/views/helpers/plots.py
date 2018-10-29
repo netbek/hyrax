@@ -9,6 +9,7 @@ import seaborn as sns
 from functools import wraps
 from inspect import getargspec
 from pandas.util import hash_pandas_object
+from StringIO import StringIO
 from .constants import APP_DIR, PLOTS_DIR, PNG, SVG, MPL_STYLES
 
 
@@ -19,7 +20,7 @@ def to_url(filename):
         return filename
 
 
-def inch(px):
+def px_to_in(px):
     return px / 96
 
 
@@ -27,16 +28,43 @@ def to_vega(plot):
     return json.dumps(plot.to_dict(), indent=2)
 
 
-def save_mpl_figure(path, fig, width=None, height=None):
+def inline_svg(data):
+    """Prepare SVG for inline use."""
+    # Exclude comments and declarations before opening <svg> tag
+    i = data.find('<svg')
+    if ~i:
+        return data[i:]
+    else:
+        return data
+
+    # import re
+
+    # return re.sub('\s+(?=<)', '', data)
+
+
+def save_figure(fig, format, width=None, height=None, path=None):
+    """Save Matplotlib or Seaborn figure."""
     if width and height:
-        fig.set_size_inches(inch(width), inch(height))
+        fig.set_size_inches(px_to_in(width), px_to_in(height))
 
     fig.set_dpi(96)
     fig.set_tight_layout(True)
-    fig.savefig(path)
-    plt.close(fig)  # Garbage collection
 
-    return True
+    if path:
+        fig.savefig(path, format=format)
+        plt.close(fig)
+        return path
+    else:
+        sio = StringIO()
+        fig.savefig(sio, format=format)
+        plt.close(fig)
+        data = sio.getvalue()
+        sio.close()
+
+        if format == SVG:
+            return inline_svg(data.decode('utf-8'))
+        else:
+            return data
 
 
 def parse_plot_args(argspec, kwargs):
@@ -85,7 +113,7 @@ def mpl_plot(func):
         if not cache or not has_cache:
             with plt.style.context(MPL_STYLES[style]):
                 fig, width, height = func(data, *args, **kwargs)
-                save_mpl_figure(path, fig, width, height)
+                save_figure(fig, format, width, height, path)
 
         return path, url
     return wrapper
@@ -101,7 +129,7 @@ def sns_plot(func):
         if not cache or not has_cache:
             with sns.axes_style(style):
                 fig, width, height = func(data, *args, **kwargs)
-                save_mpl_figure(path, fig, width, height)
+                save_figure(fig, format, width, height, path)
 
         return path, url
     return wrapper

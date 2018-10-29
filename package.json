@@ -46,8 +46,9 @@
     "papaparse": "^4.5.0",
     "react": "^15.6.2",
     "react-dom": "^15.6.2",
-    "vega-embed": "^3.8.0",
-    "vega-lite": "^2.6.0"
+    "vega": "^4.3.0",
+    "vega-embed": "^3.21.1",
+    "vega-lite": "^3.0.0-rc8"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",

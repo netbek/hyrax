@@ -6,7 +6,7 @@ import calmap
 from vega_datasets import data
 from pyramid.view import view_config
 from .helpers.constants import PNG, SVG
-from .helpers.plots import sns_plot, mpl_plot
+from .helpers.plots import sns_plot, mpl_plot, save_figure
 
 
 @sns_plot
@@ -41,33 +41,64 @@ class SeabornViews:
         """Render the plots"""
         plots = []
 
-        np.random.seed(sum(map(ord, 'calmap')))
-        all_days = pd.date_range('1/15/2014', periods=1200, freq='D')
-        days = np.sort(np.random.choice(all_days, 50))
+        # np.random.seed(sum(map(ord, 'calmap')))
+        # all_days = pd.date_range('1/15/2014', periods=1200, freq='D')
+        # days = np.sort(np.random.choice(all_days, 50))
 
-        # Year heatmap
-        events = pd.Series(np.random.randn(len(days)), index=days)
-        path, url = plot_year_heatmap(events)
-        plots.append({
-            'title': 'Year heatmap',
-            'url': url
-        })
+        # # Year heatmap
+        # events = pd.Series(np.random.randn(len(days)), index=days)
+        # path, url = plot_year_heatmap(events)
+        # plots.append({
+        #     'title': 'Year heatmap',
+        #     'url': url
+        # })
 
-        # Calendar heatmap
-        events = pd.Series(np.random.randn(len(days)), index=days)
-        path, url = plot_calendar_heatmap(events)
+        # # Calendar heatmap
+        # events = pd.Series(np.random.randn(len(days)), index=days)
+        # path, url = plot_calendar_heatmap(events)
+        # plots.append({
+        #     'title': 'Calendar heatmap',
+        #     'url': url
+        # })
+
+        # Boxplot
+        df = data('flights-2k')
+
+        first_5 = df['origin'].unique()[:5]
+        df = df[df['origin'].isin(first_5)]
+
+        df['date'] = pd.to_datetime(df['date'])
+        df['weekday_abbr'] = df['date'].dt.strftime('%a')
+        df['weekday_rank'] = df['date'].dt.weekday
+        df.sort_values('weekday_rank', inplace=True)
+
+        with sns.axes_style('whitegrid'):
+            ax = sns.boxplot(x='weekday_abbr', y='delay', hue='origin', data=df,
+                             dodge=True, linewidth=1, flierprops={'markersize': 5, 'marker': '.'})
+            # ax = sns.swarmplot(x='weekday_abbr', y='delay', hue='origin', data=df,
+            #                    dodge=True, color='.3', size=3)
+            sns.despine(offset=10, trim=True)
+            svg = save_figure(ax.get_figure(), SVG, 900, 450)
+
+        # df = data('iris')
+
+        # with sns.axes_style('whitegrid'):
+        #     ax = sns.scatterplot(x='petalLength', y='sepalLength', hue='species',
+        #                          palette='Spectral', data=df)
+        #     svg = save_figure(ax.get_figure(), SVG, 400, 300)
+
         plots.append({
-            'title': 'Calendar heatmap',
-            'url': url
+            'title': 'Scatterplot',
+            'svg': svg
         })
 
         # Scatterplot
-        df = data('iris')
-        path, url = plot_iris_scatter(df)
-        plots.append({
-            'title': 'Scatterplot',
-            'url': url
-        })
+        # df = data('iris')
+        # path, url = plot_iris_scatter(df)
+        # plots.append({
+        #     'title': 'Scatterplot',
+        #     'url': url
+        # })
 
         return {
             'plots': plots

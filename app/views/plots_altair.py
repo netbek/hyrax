@@ -25,6 +25,27 @@ def example_scatterplot():
     return p
 
 
+def example_scatterplot_matrix():
+    import altair as alt
+    from vega_datasets import data
+
+    df = data.iris()
+
+    p = alt.Chart(df).mark_circle().encode(
+        x=alt.X(alt.repeat('column'), type='quantitative'),
+        y=alt.Y(alt.repeat('row'), type='quantitative'),
+        color='species:N'
+    ).properties(
+        width=150,
+        height=150
+    ).repeat(
+        row=['sepalLength', 'sepalWidth', 'petalLength', 'petalWidth'],
+        column=['sepalLength', 'sepalWidth', 'petalLength', 'petalWidth']
+    ).interactive()
+
+    return p
+
+
 @alt_plot
 def plot_iris_scatter(data, width=400, height=300):
     p = alt.Chart(data).mark_circle().encode(
@@ -89,21 +110,10 @@ class AltairViews:
 
         # Scatterplot matrix
         # https://altair-viz.github.io/gallery/scatter_matrix.html
-        p = alt.Chart('/api/altair?dataset=iris').mark_circle().encode(
-            alt.X(alt.repeat('column'), type='quantitative'),
-            alt.Y(alt.repeat('row'), type='quantitative'),
-            color='species:N'
-        ).properties(
-            width=150,
-            height=150
-        ).repeat(
-            row=['sepalLength', 'sepalWidth', 'petalLength', 'petalWidth'],
-            column=['sepalLength', 'sepalWidth', 'petalLength', 'petalWidth']
-        ).interactive()
-
         plots.append({
             'title': 'Scatterplot matrix',
-            'spec': to_vega(p)
+            'spec': example_scatterplot_matrix().to_json(),
+            'source': get_function_source(example_scatterplot_matrix)
         })
 
         return {

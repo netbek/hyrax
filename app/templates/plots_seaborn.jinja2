@@ -11,7 +11,11 @@
       {% for item in plots %}
         <h2>{{ item.title }}</h2>
         <figure class="figure">
-          <img src="{{ item.url }}" alt="{{ item.title }}" />
+          {% if item.url %}
+            <img src="{{ item.url }}" alt="{{ item.title }}" />
+          {% elif item.svg %}
+            {{ item.svg|safe }}
+          {% endif %}
         </figure>
       {% endfor %}
     </article>
