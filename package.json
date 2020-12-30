@@ -46,7 +46,7 @@
     "papaparse": "4.6.3",
     "react": "15.6.2",
     "react-dom": "15.6.2",
-    "vega": "4.4.0",
+    "vega": "5.17.3",
     "vega-embed": "3.30.0",
     "vega-lite": "3.4.0"
   },
